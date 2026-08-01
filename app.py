@@ -1,4 +1,4 @@
-﻿import random
+import random
 import string
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
@@ -6,7 +6,6 @@ from flask_socketio import SocketIO, emit, join_room
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'twraithchat_ghost_ephemeral_2026'
 
-# FIX AUDIO/VIDÉO : Limite de transfert maintenue (relai fallback au besoin)
 socketio = SocketIO(
     app, 
     cors_allowed_origins="*", 
@@ -36,7 +35,8 @@ def handle_register(data):
     user_id = data.get('user_id')
     profile = data.get('profile', {})
 
-    if not user_id:
+    # Si pas d'ID valide fourni par le client, on en génère un nouveau
+    if not user_id or str(user_id) == 'null' or len(str(user_id)) != 8:
         user_id = generate_unique_id()
 
     online_users[user_id] = {
@@ -45,6 +45,7 @@ def handle_register(data):
     }
 
     join_room(user_id)
+    # Renvoie l'ID généré ou confirmé au client
     emit('registered', {'status': 'ok', 'user_id': user_id})
 
 
@@ -95,11 +96,10 @@ def handle_sync_profile(data):
             }, room=tid)
 
 
-# --- SIGNALISATION WEBRTC POUR P2P DIRECT (VIDÉOS & SONS LOURDS) ---
+# --- SIGNALISATION WEBRTC ---
 
 @socketio.on('webrtc_offer')
 def handle_webrtc_offer(data):
-    """Transmet l'offre WebRTC pour ouvrir le canal P2P direct."""
     target_id = data.get('target_id')
     if target_id in online_users:
         emit('webrtc_offer', {
@@ -111,7 +111,6 @@ def handle_webrtc_offer(data):
 
 @socketio.on('webrtc_answer')
 def handle_webrtc_answer(data):
-    """Transmet la réponse WebRTC de l'autre pair."""
     target_id = data.get('target_id')
     if target_id in online_users:
         emit('webrtc_answer', {
@@ -122,7 +121,6 @@ def handle_webrtc_answer(data):
 
 @socketio.on('webrtc_ice_candidate')
 def handle_webrtc_ice(data):
-    """Transmet les adresses/candidats ICE pour la connexion directe."""
     target_id = data.get('target_id')
     if target_id in online_users:
         emit('webrtc_ice_candidate', {
@@ -133,11 +131,11 @@ def handle_webrtc_ice(data):
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    """Nettoyage de la connexion."""
     for uid, user_data in list(online_users.items()):
         if user_data['sid'] == request.sid:
             del online_users[uid]
             break
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)﻿
+  
