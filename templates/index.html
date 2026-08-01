@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -256,7 +257,6 @@
             text-align: center; position: relative;
         }
 
-        /* TITRE AVEC ICÔNE */
         .app-title-container {
             display: flex;
             align-items: center;
@@ -331,7 +331,6 @@
         .message.sent { align-self: flex-end; background: var(--ios-blue); color: white; border-bottom-right-radius: 4px; }
         .message.received { align-self: flex-start; background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(10px); color: #000; border-bottom-left-radius: 4px; }
 
-        /* MULTIMÉDIA STYLES */
         .media-preview {
             max-width: 100%;
             max-height: 250px;
@@ -385,7 +384,6 @@
 
 <div class="app-wrapper">
     <div class="sidebar" id="sidebar">
-        <!-- COMMUTATEUR DE LANGUE -->
         <div class="lang-switch-box">
             🌐 <select id="lang-select" class="lang-select" onchange="changeLanguage(this.value)">
                 <option value="fr">FR</option>
@@ -430,7 +428,6 @@
 
         <div class="header">
             <div class="app-title-container">
-                <!-- ICÔNE FANTÔME DE L'APPLICATION WRAITHCHAT -->
                 <svg class="app-logo" viewBox="0 0 24 24">
                     <path d="M12 2C7.58 2 4 5.58 4 10v9.5c0 .64.67 1.04 1.2.7l2.8-1.75 2.8 1.75c.37.23.83.23 1.2 0l2.8-1.75 2.8 1.75c.53.34 1.2-.06 1.2-.7V10c0-4.42-3.58-8-8-8zm-3 9c-.83 0-1.5-.67-1.5-1.5S8.17 8 9 8s1.5.67 1.5 1.5S9.83 11 9 11zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 8 15 8s1.5.67 1.5 1.5S15.83 11 15 11z"/>
                 </svg>
@@ -459,13 +456,11 @@
         </div>
 
         <div class="input-bar">
-            <!-- BOUTON FICHIERS & VIDÉOS -->
             <label class="btn-attach" id="btn-attach-title" title="Envoyer une image, vidéo ou fichier">
                 <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
                 <input type="file" id="file-input" onchange="sendP2PFile(this)">
             </label>
             
-            <!-- BOUTON MICROPHONE VOCAL -->
             <button class="btn-mic" id="mic-btn" onclick="toggleAudioRecord()" title="Microphone Vocal">
                 <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
             </button>
@@ -481,11 +476,16 @@
 
 <script>
     const socket = io();
-    let myId = localStorage.getItem('teleguard_id') || null;
+    
+    // NETTOYAGE & UNIFORMISATION ID (FIX ID NON GENERÉ)
+    let myId = localStorage.getItem('wraithchat_id') || localStorage.getItem('teleguard_id');
+    if (myId === 'null' || myId === 'undefined' || !myId) {
+        myId = null;
+    }
+
     let totalUnreadCount = 0;
     let currentLang = localStorage.getItem('wraithchat_lang') || 'fr';
 
-    // DICTIONNAIRE MULTILINGUE (FR / EN)
     const translations = {
         fr: {
             title: "WraithChat — Messagerie Éphémère & Secrète",
@@ -553,26 +553,23 @@
         }
     };
 
-    // AUDIO SYSTEM
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
 
-    let myProfile = JSON.parse(localStorage.getItem('teleguard_profile')) || {
+    let myProfile = JSON.parse(localStorage.getItem('wraithchat_profile')) || JSON.parse(localStorage.getItem('teleguard_profile')) || {
         pseudo: '', gender: 'Non spécifié', age: '', avatar: ''
     };
-    let contacts = JSON.parse(localStorage.getItem('teleguard_contacts')) || {};
+    let contacts = JSON.parse(localStorage.getItem('wraithchat_contacts')) || JSON.parse(localStorage.getItem('teleguard_contacts')) || {};
 
     const serverStatus = document.getElementById('server-status');
     const targetStatus = document.getElementById('target-status');
     const targetInput = document.getElementById('target-id');
 
-    // DEMANDE D'AUTORISATION POUR LES NOTIFICATIONS
     if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
 
-    // FONCTION SYSTEME MULTILINGUE
     function changeLanguage(lang) {
         currentLang = lang;
         localStorage.setItem('wraithchat_lang', lang);
@@ -593,6 +590,7 @@
         document.getElementById('contact-id-input').placeholder = t.contactIdPlaceholder;
         document.getElementById('notif-reset-title').title = t.notifResetTitle;
         if (!myId) document.getElementById('my-id').innerText = t.connecting;
+        else document.getElementById('my-id').innerText = myId;
         document.getElementById('target-id').placeholder = t.targetPlaceholder;
         document.getElementById('welcome-msg').innerText = t.welcomeMsg;
         document.getElementById('btn-attach-title').title = t.attachTitle;
@@ -605,6 +603,7 @@
     // SOCKET.IO EVENTS
     socket.on('connect', () => {
         serverStatus.classList.add('online');
+        // On demande au serveur de nous attribuer un ID si myId est nul
         socket.emit('register_user', { user_id: myId, profile: myProfile });
     });
 
@@ -614,7 +613,8 @@
 
     socket.on('registered', (data) => {
         myId = data.user_id;
-        localStorage.setItem('teleguard_id', myId);
+        // On sauvegarde le vrai ID généré à 8 chiffres dans le navigateur
+        localStorage.setItem('wraithchat_id', myId);
         document.getElementById('my-id').innerText = myId;
         broadcastProfile();
     });
@@ -622,7 +622,6 @@
     socket.on('receive_message', (msg) => {
         const currentTarget = targetInput.value.trim();
         
-        // Si la discussion ouverte est celle de l'expéditeur
         if (msg.sender_id === currentTarget) {
             if (msg.type === 'text') {
                 addMessage(msg.content, 'received');
@@ -630,7 +629,6 @@
                 renderMedia(msg.content, msg.file_type, 'received');
             }
         } else {
-            // Sinon on notifie
             triggerNotification(msg.sender_id, msg.type);
         }
     });
@@ -642,7 +640,6 @@
         }
     });
 
-    // MESSAGES VOCAUX (MICROPHONE)
     async function toggleAudioRecord() {
         const targetId = targetInput.value.trim();
         const t = translations[currentLang];
@@ -700,7 +697,6 @@
         }
     }
 
-    // NOTIFICATIONS SYSTEME & BADGE
     function triggerNotification(senderId, msgType = 'text') {
         const t = translations[currentLang];
         totalUnreadCount++;
@@ -708,14 +704,12 @@
         badge.innerText = totalUnreadCount;
         badge.classList.add('active');
 
-        // Mettre à jour la puce bleue sur le contact
         if (contacts[senderId]) {
             contacts[senderId].hasUnread = true;
-            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
+            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
             renderContacts();
         }
 
-        // Notification push système du navigateur
         if ("Notification" in window && Notification.permission === "granted") {
             const contactName = contacts[senderId] ? contacts[senderId].pseudo : `ID ${senderId}`;
             let text = t.notifNewMsg;
@@ -736,7 +730,6 @@
         badge.classList.remove('active');
     }
 
-    // PROFIL & CONTACTS
     function initProfileUI() {
         document.getElementById('user-pseudo').value = myProfile.pseudo || '';
         document.getElementById('user-gender').value = myProfile.gender || 'Non spécifié';
@@ -750,7 +743,7 @@
         myProfile.pseudo = document.getElementById('user-pseudo').value.trim();
         myProfile.gender = document.getElementById('user-gender').value;
         myProfile.age = document.getElementById('user-age').value.trim();
-        localStorage.setItem('teleguard_profile', JSON.stringify(myProfile));
+        localStorage.setItem('wraithchat_profile', JSON.stringify(myProfile));
         broadcastProfile();
         alert(t.profileSaved);
     }
@@ -775,7 +768,7 @@
         const id = idInput.value.trim();
         if (id.length === 8 && !contacts[id]) {
             contacts[id] = { id: id, pseudo: `Contact ${id}`, gender: '', age: '', avatar: '', hasUnread: false };
-            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
+            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
             renderContacts();
             idInput.value = '';
         }
@@ -786,7 +779,7 @@
         e.stopPropagation();
         if (confirm(`${t.deleteContactConfirm} ${id} ?`)) {
             delete contacts[id];
-            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
+            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
             renderContacts();
         }
     }
@@ -795,7 +788,7 @@
         targetInput.value = id;
         if (contacts[id] && contacts[id].hasUnread) {
             contacts[id].hasUnread = false;
-            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
+            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
             renderContacts();
         }
         checkTargetOnline();
@@ -855,7 +848,6 @@
 
     targetInput.addEventListener('input', checkTargetOnline);
 
-    // ENVOI TEXTE ET FICHIERS (IMAGE, VIDÉO, AUDIO, AUTRES)
     function sendMessage() {
         const t = translations[currentLang];
         const targetId = targetInput.value.trim();
@@ -891,7 +883,6 @@
         const file = input.files[0];
         if (!file) return;
 
-        // Limite visuelle côté client (35 Mo)
         if (file.size > 35 * 1024 * 1024) {
             alert(t.fileTooHeavy);
             input.value = '';
