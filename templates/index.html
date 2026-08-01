@@ -1,26 +1,34 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title id="page-title">WraithChat — Messagerie Éphémère & Secrète</title>
+    
+    <!-- PWA & Mobile Web App Capabilities -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#007AFF">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- SCRIPT SOCKET.IO -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     
     <style>
         :root {
-            --ios-glass: rgba(255, 255, 255, 0.25);
-            --ios-glass-border: rgba(255, 255, 255, 0.35);
-            --ios-blur: blur(25px);
+            --ios-glass: rgba(255, 255, 255, 0.45);
+            --ios-glass-dark: rgba(255, 255, 255, 0.25);
+            --ios-glass-border: rgba(255, 255, 255, 0.4);
+            --ios-blur: blur(30px);
             --ios-blue: #007AFF;
             --ios-green: #34C759;
             --ios-red: #FF3B30;
             --ios-text: #1C1C1E;
+            --ios-subtext: rgba(60, 60, 67, 0.75);
+            --sidebar-width: 320px;
         }
 
         * {
@@ -31,46 +39,64 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
-            height: 100vh;
+        html, body {
+            height: 100%;
             height: 100dvh;
             width: 100vw;
+            overflow: hidden;
+            background: #0f172a url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop') no-repeat center center fixed;
-            background-size: cover;
-            overflow: hidden;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
+        /* WRAPPER PRINCIPAL */
         .app-wrapper {
             width: 100%;
-            max-width: 900px;
             height: 100%;
-            max-height: 880px;
+            max-width: 1200px;
+            max-height: 920px;
             display: flex;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
             backdrop-filter: var(--ios-blur);
             -webkit-backdrop-filter: var(--ios-blur);
             border: 1px solid var(--ios-glass-border);
-            border-radius: 30px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             position: relative;
         }
 
-        /* SIDEBAR */
+        /* OVERLAY MOBILE POUR FERMER LA SIDEBAR */
+        .sidebar-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* SIDEBAR (CONTACTS ET PROFIL) */
         .sidebar {
-            width: 320px;
-            background: rgba(255, 255, 255, 0.25);
+            width: var(--sidebar-width);
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.35);
             border-right: 1px solid var(--ios-glass-border);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
             padding: 16px;
             overflow-y: auto;
-            transition: transform 0.3s ease;
-            z-index: 10;
+            z-index: 20;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .lang-switch-box {
@@ -81,41 +107,43 @@
         }
 
         .lang-select {
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.6);
             border: 1px solid var(--ios-glass-border);
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 11px;
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12px;
             font-weight: 600;
             outline: none;
             cursor: pointer;
-            color: #1c1c1e;
+            color: var(--ios-text);
         }
 
         .profile-card {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.4);
             border: 1px solid var(--ios-glass-border);
             border-radius: 18px;
             padding: 14px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
         .avatar-upload {
             position: relative;
-            width: 70px;
-            height: 70px;
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
             overflow: hidden;
-            border: 2px solid var(--ios-blue);
+            border: 3px solid var(--ios-blue);
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
 
         .avatar-upload img {
@@ -128,7 +156,7 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
 
         .btn-save-profile {
@@ -140,56 +168,62 @@
             background: var(--ios-green);
             color: white;
             border: none;
-            padding: 8px;
-            border-radius: 10px;
-            font-size: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .btn-save-profile:active { opacity: 0.8; }
 
         .contacts-section {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            min-height: 0;
         }
 
         .add-contact-box {
             display: flex;
-            gap: 6px;
+            gap: 8px;
         }
 
         .contact-list {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 8px;
             overflow-y: auto;
+            padding-right: 2px;
         }
 
         .contact-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            padding: 8px 10px;
-            border-radius: 12px;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 10px 12px;
+            border-radius: 14px;
             cursor: pointer;
             border: 1px solid transparent;
             transition: all 0.2s;
             position: relative;
         }
 
-        .contact-item:hover {
-            background: rgba(255, 255, 255, 0.5);
+        .contact-item:hover, .contact-item:active {
+            background: rgba(255, 255, 255, 0.7);
             border-color: var(--ios-glass-border);
         }
 
         .contact-avatar {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: rgba(0,0,0,0.1);
             object-fit: cover;
+            flex-shrink: 0;
         }
 
         .contact-info {
@@ -201,9 +235,9 @@
         }
 
         .contact-name {
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 600;
-            color: #000;
+            color: var(--ios-text);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -211,7 +245,7 @@
 
         .contact-details {
             font-size: 11px;
-            color: rgba(0,0,0,0.6);
+            color: var(--ios-subtext);
         }
 
         .unread-dot {
@@ -227,34 +261,51 @@
         .unread-dot.active { display: block; }
 
         .btn-delete-contact {
-            background: transparent; border: none; cursor: pointer; padding: 4px; opacity: 0.6;
+            background: transparent; border: none; cursor: pointer; padding: 6px; opacity: 0.6;
         }
         .btn-delete-contact:hover { opacity: 1; }
         .btn-delete-contact svg { width: 16px; height: 16px; fill: var(--ios-red); }
 
+        /* VUE CHAT PRINCIPALE */
         .app-container {
-            flex: 1; display: flex; flex-direction: column; position: relative; height: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            height: 100%;
+            min-width: 0;
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        @media (max-width: 768px) {
-            .app-wrapper { max-width: 100%; max-height: 100%; border-radius: 0; border: none; }
-            .sidebar {
-                position: absolute; left: 0; top: 0; bottom: 0; width: 280px;
-                transform: translateX(-100%); background: rgba(255, 255, 255, 0.85);
-            }
-            .sidebar.open { transform: translateX(0); }
-            .menu-toggle { display: block !important; }
+        /* HEADER MOBILE & DESKTOP */
+        .header {
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--ios-glass-border);
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .menu-toggle {
-            display: none; position: absolute; left: 12px; top: 18px; z-index: 5;
-            background: none; border: none; font-size: 20px; cursor: pointer;
-        }
-
-        .header {
-            padding: 20px 16px 12px; background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px); border-bottom: 1px solid var(--ios-glass-border);
-            text-align: center; position: relative;
+            display: none;
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--ios-glass-border);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 10;
+            color: var(--ios-text);
         }
 
         .app-title-container {
@@ -265,78 +316,104 @@
         }
 
         .app-logo {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             fill: var(--ios-text);
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
         }
 
-        .header h1 { font-size: 17px; font-weight: 600; color: #000; }
+        .header h1 { font-size: 16px; font-weight: 700; color: var(--ios-text); }
 
         .notif-icon {
-            position: absolute; right: 16px; top: 20px; cursor: pointer; display: flex; align-items: center;
+            position: absolute; right: 16px; top: 50%; transform: translateY(-50%); cursor: pointer; display: flex; align-items: center;
         }
         .notif-icon svg { width: 22px; height: 22px; fill: var(--ios-text); }
 
         .notif-badge {
             position: absolute; top: -4px; right: -4px; background: var(--ios-red);
-            color: white; font-size: 10px; font-weight: bold; padding: 2px 5px;
+            color: white; font-size: 10px; font-weight: bold; padding: 2px 6px;
             border-radius: 10px; display: none;
         }
         .notif-badge.active { display: block; }
 
         .id-badge {
             display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(255, 255, 255, 0.4); padding: 4px 12px; border-radius: 20px;
-            font-size: 13px; font-weight: 500; color: #1c1c1e; margin-top: 6px;
-            border: 0.5px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.5); padding: 3px 10px; border-radius: 20px;
+            font-size: 12px; font-weight: 500; color: var(--ios-text); margin-top: 4px;
+            border: 0.5px solid rgba(255, 255, 255, 0.6);
         }
 
         .status-dot {
-            width: 9px; height: 9px; background-color: var(--ios-red); border-radius: 50%;
-            box-shadow: 0 0 8px rgba(0,0,0,0.2); transition: background-color 0.3s ease;
+            width: 8px; height: 8px; background-color: var(--ios-red); border-radius: 50%;
+            box-shadow: 0 0 6px rgba(0,0,0,0.1); transition: background-color 0.3s ease;
         }
         .status-dot.online { background-color: var(--ios-green); }
 
         .connect-bar {
-            padding: 10px 16px; display: flex; gap: 8px; background: rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15); align-items: center;
+            padding: 10px 16px; display: flex; gap: 8px; background: rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2); align-items: center; flex-shrink: 0;
         }
 
         .input-ios {
-            flex: 1; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--ios-glass-border);
-            background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(5px); font-size: 13px; outline: none; color: #000;
+            width: 100%; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--ios-glass-border);
+            background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); font-size: 14px; outline: none; color: var(--ios-text);
+            transition: all 0.2s;
+        }
+        .input-ios:focus {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: var(--ios-blue);
         }
 
         .btn-ios {
-            background: var(--ios-blue); color: white; border: none; padding: 8px 12px;
-            border-radius: 12px; font-weight: 600; font-size: 12px; cursor: pointer;
-            transition: transform 0.1s ease, opacity 0.2s ease;
+            background: var(--ios-blue); color: white; border: none; padding: 10px 14px;
+            border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer;
+            transition: transform 0.1s ease, opacity 0.2s ease; flex-shrink: 0;
         }
-        .btn-ios:active { transform: scale(0.96); opacity: 0.8; }
+        .btn-ios:active { transform: scale(0.95); opacity: 0.85; }
 
-        .chat-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        /* ZONE DU CHAT */
+        .chat-box { 
+            flex: 1; 
+            padding: 16px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
 
         .message {
-            max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 14px;
+            max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 14px;
             line-height: 1.4; word-wrap: break-word; animation: fadeIn 0.2s ease-out;
-            min-width: 140px;
+            min-width: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .message.sent { align-self: flex-end; background: var(--ios-blue); color: white; border-bottom-right-radius: 4px; }
-        .message.received { align-self: flex-start; background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(10px); color: #000; border-bottom-left-radius: 4px; }
+        .message.sent { 
+            align-self: flex-end; 
+            background: var(--ios-blue); 
+            color: white; 
+            border-bottom-right-radius: 4px; 
+        }
+        .message.received { 
+            align-self: flex-start; 
+            background: rgba(255, 255, 255, 0.75); 
+            backdrop-filter: blur(10px); 
+            color: var(--ios-text); 
+            border-bottom-left-radius: 4px; 
+        }
 
+        /* MEDIA & AUDIOS */
         .media-preview {
             max-width: 100%;
-            max-height: 250px;
+            max-height: 280px;
             border-radius: 12px;
-            margin-top: 5px;
+            margin-top: 4px;
             display: block;
+            object-fit: cover;
         }
 
         .audio-player-container {
@@ -352,16 +429,24 @@
             outline: none;
         }
 
+        /* BARRE DE SAISIE INFERIEURE */
         .input-bar {
-            padding: 12px 16px 20px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);
-            border-top: 1px solid var(--ios-glass-border); display: flex; gap: 8px; align-items: center;
+            padding: 10px 14px max(12px, env(safe-area-inset-bottom)); 
+            background: rgba(255, 255, 255, 0.35); 
+            backdrop-filter: blur(15px);
+            border-top: 1px solid var(--ios-glass-border); 
+            display: flex; 
+            gap: 8px; 
+            align-items: center;
+            flex-shrink: 0;
         }
 
         .btn-attach, .btn-mic {
-            background: rgba(255, 255, 255, 0.4); border: 1px solid var(--ios-glass-border);
-            width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center;
+            background: rgba(255, 255, 255, 0.6); border: 1px solid var(--ios-glass-border);
+            width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center;
             align-items: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s;
         }
+        .btn-attach:active, .btn-mic:active { transform: scale(0.92); }
 
         .btn-mic.recording {
             background: var(--ios-red) !important;
@@ -370,20 +455,49 @@
 
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.08); }
             100% { transform: scale(1); }
         }
 
-        .btn-attach svg, .btn-mic svg { width: 18px; height: 18px; fill: #1c1c1e; }
+        .btn-attach svg, .btn-mic svg { width: 20px; height: 20px; fill: var(--ios-text); }
         .btn-mic.recording svg { fill: white; }
 
         #file-input, #avatar-input { display: none; }
+
+        /* MODIFICATIONS RESPONSIVE (MOBILES & TABLETTES) */
+        @media (max-width: 768px) {
+            body { padding: 0; }
+            .app-wrapper { 
+                max-width: 100%; 
+                max-height: 100%; 
+                border-radius: 0; 
+                border: none; 
+            }
+            .sidebar {
+                position: absolute; 
+                left: 0; top: 0; bottom: 0; 
+                width: 82%;
+                max-width: 310px;
+                transform: translateX(-100%); 
+                background: rgba(255, 255, 255, 0.92);
+                backdrop-filter: blur(25px);
+                box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay.open { display: block; opacity: 1; }
+            .menu-toggle { display: block; }
+            .message { max-width: 88%; }
+        }
     </style>
 </head>
 <body>
 
 <div class="app-wrapper">
+    <!-- OVERLAY POUR FERMER LE MENU EN TOUCHANT L'ÉCRAN -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <div class="sidebar" id="sidebar">
+        <!-- COMMUTATEUR DE LANGUE -->
         <div class="lang-switch-box">
             🌐 <select id="lang-select" class="lang-select" onchange="changeLanguage(this.value)">
                 <option value="fr">FR</option>
@@ -393,25 +507,25 @@
 
         <div class="profile-card">
             <label class="avatar-upload" id="avatar-title" title="Changer de photo">
-                <img id="avatar-img" src="https://via.placeholder.com/70?text=Photo" alt="Avatar">
+                <img id="avatar-img" src="https://via.placeholder.com/76?text=Photo" alt="Avatar">
                 <input type="file" id="avatar-input" accept="image/*" onchange="uploadAvatar(this)">
             </label>
             <div class="profile-inputs">
                 <input type="text" id="user-pseudo" class="input-ios" placeholder="Pseudo">
-                <div style="display: flex; gap: 4px;">
+                <div style="display: flex; gap: 6px;">
                     <select id="user-gender" class="input-ios">
                         <option value="Non spécifié" id="opt-gender-default">Sexe</option>
                         <option value="H" id="opt-gender-m">Homme</option>
                         <option value="F" id="opt-gender-f">Femme</option>
                     </select>
-                    <input type="number" id="user-age" class="input-ios" placeholder="Âge" style="width: 70px;">
+                    <input type="number" id="user-age" class="input-ios" placeholder="Âge" style="width: 80px;">
                 </div>
             </div>
             <button class="btn-save-profile" id="btn-save" onclick="saveProfile()">💾 Sauvegarder</button>
         </div>
 
         <div class="contacts-section">
-            <h3 style="font-size: 13px; font-weight: 600; color: #000;" id="txt-contacts-header">Contacts</h3>
+            <h3 style="font-size: 13px; font-weight: 700; color: var(--ios-text);" id="txt-contacts-header">Contacts</h3>
             <input type="text" id="search-contact-input" class="input-ios" placeholder="🔍 Rechercher..." oninput="renderContacts()">
             
             <div class="add-contact-box">
@@ -424,15 +538,16 @@
     </div>
 
     <div class="app-container">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-
         <div class="header">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
             <div class="app-title-container">
                 <svg class="app-logo" viewBox="0 0 24 24">
                     <path d="M12 2C7.58 2 4 5.58 4 10v9.5c0 .64.67 1.04 1.2.7l2.8-1.75 2.8 1.75c.37.23.83.23 1.2 0l2.8-1.75 2.8 1.75c.53.34 1.2-.06 1.2-.7V10c0-4.42-3.58-8-8-8zm-3 9c-.83 0-1.5-.67-1.5-1.5S8.17 8 9 8s1.5.67 1.5 1.5S9.83 11 9 11zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 8 15 8s1.5.67 1.5 1.5S15.83 11 15 11z"/>
                 </svg>
                 <h1>WraithChat</h1>
             </div>
+            
             <div class="notif-icon" onclick="resetNotifications()" id="notif-reset-title" title="Réinitialiser les notifications">
                 <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
                 <span class="notif-badge" id="notif-badge">0</span>
@@ -450,25 +565,27 @@
         </div>
 
         <div class="chat-box" id="chat-box">
-            <div class="message received" id="welcome-msg" style="align-self: center; background: rgba(255,255,255,0.3); font-size: 12px; text-align: center;">
+            <div class="message received" id="welcome-msg" style="align-self: center; background: rgba(255,255,255,0.4); font-size: 12px; text-align: center; border-radius: 12px;">
                 👻 WraithChat : Vos échanges sont éphémères et ne sont jamais stockés.
             </div>
         </div>
 
         <div class="input-bar">
+            <!-- BOUTON FICHIERS & VIDÉOS -->
             <label class="btn-attach" id="btn-attach-title" title="Envoyer une image, vidéo ou fichier">
                 <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
                 <input type="file" id="file-input" onchange="sendP2PFile(this)">
             </label>
             
+            <!-- BOUTON MICROPHONE VOCAL -->
             <button class="btn-mic" id="mic-btn" onclick="toggleAudioRecord()" title="Microphone Vocal">
                 <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
             </button>
 
             <input type="text" id="message-input" class="input-ios" placeholder="Message..." autocomplete="off">
             
-            <button class="btn-ios" style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            <button class="btn-ios" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="sendMessage()">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
         </div>
     </div>
@@ -476,16 +593,11 @@
 
 <script>
     const socket = io();
-    
-    // NETTOYAGE & UNIFORMISATION ID (FIX ID NON GENERÉ)
-    let myId = localStorage.getItem('wraithchat_id') || localStorage.getItem('teleguard_id');
-    if (myId === 'null' || myId === 'undefined' || !myId) {
-        myId = null;
-    }
-
+    let myId = localStorage.getItem('teleguard_id') || null;
     let totalUnreadCount = 0;
     let currentLang = localStorage.getItem('wraithchat_lang') || 'fr';
 
+    // DICTIONNAIRE MULTILINGUE (FR / EN)
     const translations = {
         fr: {
             title: "WraithChat — Messagerie Éphémère & Secrète",
@@ -553,14 +665,15 @@
         }
     };
 
+    // AUDIO SYSTEM
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
 
-    let myProfile = JSON.parse(localStorage.getItem('wraithchat_profile')) || JSON.parse(localStorage.getItem('teleguard_profile')) || {
+    let myProfile = JSON.parse(localStorage.getItem('teleguard_profile')) || {
         pseudo: '', gender: 'Non spécifié', age: '', avatar: ''
     };
-    let contacts = JSON.parse(localStorage.getItem('wraithchat_contacts')) || JSON.parse(localStorage.getItem('teleguard_contacts')) || {};
+    let contacts = JSON.parse(localStorage.getItem('teleguard_contacts')) || {};
 
     const serverStatus = document.getElementById('server-status');
     const targetStatus = document.getElementById('target-status');
@@ -590,7 +703,6 @@
         document.getElementById('contact-id-input').placeholder = t.contactIdPlaceholder;
         document.getElementById('notif-reset-title').title = t.notifResetTitle;
         if (!myId) document.getElementById('my-id').innerText = t.connecting;
-        else document.getElementById('my-id').innerText = myId;
         document.getElementById('target-id').placeholder = t.targetPlaceholder;
         document.getElementById('welcome-msg').innerText = t.welcomeMsg;
         document.getElementById('btn-attach-title').title = t.attachTitle;
@@ -603,7 +715,6 @@
     // SOCKET.IO EVENTS
     socket.on('connect', () => {
         serverStatus.classList.add('online');
-        // On demande au serveur de nous attribuer un ID si myId est nul
         socket.emit('register_user', { user_id: myId, profile: myProfile });
     });
 
@@ -613,8 +724,7 @@
 
     socket.on('registered', (data) => {
         myId = data.user_id;
-        // On sauvegarde le vrai ID généré à 8 chiffres dans le navigateur
-        localStorage.setItem('wraithchat_id', myId);
+        localStorage.setItem('teleguard_id', myId);
         document.getElementById('my-id').innerText = myId;
         broadcastProfile();
     });
@@ -640,6 +750,7 @@
         }
     });
 
+    // MESSAGES VOCAUX
     async function toggleAudioRecord() {
         const targetId = targetInput.value.trim();
         const t = translations[currentLang];
@@ -697,6 +808,7 @@
         }
     }
 
+    // NOTIFICATIONS SYSTEME & BADGE
     function triggerNotification(senderId, msgType = 'text') {
         const t = translations[currentLang];
         totalUnreadCount++;
@@ -706,7 +818,7 @@
 
         if (contacts[senderId]) {
             contacts[senderId].hasUnread = true;
-            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
+            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
             renderContacts();
         }
 
@@ -730,6 +842,7 @@
         badge.classList.remove('active');
     }
 
+    // PROFIL & CONTACTS
     function initProfileUI() {
         document.getElementById('user-pseudo').value = myProfile.pseudo || '';
         document.getElementById('user-gender').value = myProfile.gender || 'Non spécifié';
@@ -743,7 +856,7 @@
         myProfile.pseudo = document.getElementById('user-pseudo').value.trim();
         myProfile.gender = document.getElementById('user-gender').value;
         myProfile.age = document.getElementById('user-age').value.trim();
-        localStorage.setItem('wraithchat_profile', JSON.stringify(myProfile));
+        localStorage.setItem('teleguard_profile', JSON.stringify(myProfile));
         broadcastProfile();
         alert(t.profileSaved);
     }
@@ -760,7 +873,10 @@
     }
 
     function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
     }
 
     function addContact() {
@@ -768,7 +884,7 @@
         const id = idInput.value.trim();
         if (id.length === 8 && !contacts[id]) {
             contacts[id] = { id: id, pseudo: `Contact ${id}`, gender: '', age: '', avatar: '', hasUnread: false };
-            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
+            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
             renderContacts();
             idInput.value = '';
         }
@@ -779,7 +895,7 @@
         e.stopPropagation();
         if (confirm(`${t.deleteContactConfirm} ${id} ?`)) {
             delete contacts[id];
-            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
+            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
             renderContacts();
         }
     }
@@ -788,7 +904,7 @@
         targetInput.value = id;
         if (contacts[id] && contacts[id].hasUnread) {
             contacts[id].hasUnread = false;
-            localStorage.setItem('wraithchat_contacts', JSON.stringify(contacts));
+            localStorage.setItem('teleguard_contacts', JSON.stringify(contacts));
             renderContacts();
         }
         checkTargetOnline();
@@ -808,7 +924,7 @@
             item.className = 'contact-item';
             item.onclick = () => selectContact(c.id);
 
-            const avatarSrc = c.avatar || 'https://via.placeholder.com/36?text=U';
+            const avatarSrc = c.avatar || 'https://via.placeholder.com/40?text=U';
             
             let genderDisplay = c.gender;
             if (c.gender === 'H') genderDisplay = t.genderM;
@@ -848,6 +964,7 @@
 
     targetInput.addEventListener('input', checkTargetOnline);
 
+    // ENVOI TEXTE ET FICHIERS
     function sendMessage() {
         const t = translations[currentLang];
         const targetId = targetInput.value.trim();
